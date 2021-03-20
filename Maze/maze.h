@@ -1,16 +1,14 @@
 #include<iostream>
-#include<stack>
+#include<vector>
 #include<fstream>
 #include<ctime>
-#include<Windows.h>
+#include<iomanip>
 using namespace std;
 typedef struct Node {
 	int x;
 	int y;
-	bool visited;
 	Node() {
 		x = y = 0;
-		visited = false;
 	}
 }Node;
 
@@ -18,45 +16,45 @@ class Maze {
 private:
 	int n;
 	int** M;
-	stack<Node> S;
+	vector<Node> S;
 public:
 	Maze(int N = 10);
-	void init();
-	void Out_M();
-	bool Path(int xs = 1, int ys = 1, int xe = 8, int ye = 8);
+	~Maze();
 	void Rand_M();
+	void Init();
+	void Out_M();
+	void Out_Path();
+	bool Find_Path(int sx = 1, int sy = 1, int ex = 8, int ey = 8);
 };
 
-bool Maze::Path(int xs, int ys, int xe, int ye) {
-	if (M[xs][ys] || M[xe][ye])
+bool Maze::Find_Path(int sx, int sy, int ex, int ey) {
+	if (M[sx][sy] || M[ex][ey])
 		return false;
 	Node start;
-	start.x = xs;
-	start.y = ys;
-	//start.visited = true;
-	S.push(start);
-	int di, i, j, find;
+	start.x = sx;
+	start.y = sy;
+	M[sx][sy] = -1;
+	S.push_back(start);
+	int direct, i, j, find;
 	while (S.size()) {
-		cout << S.top().x << " " << S.top().y << endl;
-		di = -1;
-		i = S.top().x;
-		j = S.top().y;
-		M[S.top().x][S.top().y] = -1;
-		if (i == xe && j == ye) {
+		//cout << S.back().x << " " << S.back().y << endl;
+		i = (S.back()).x;
+		j = (S.back()).y;
+		if (i == ex && j == ey)
 			return true;
-		}
 		find = 0;
-		while (di < 4 && find==0) {
-			di++;
-			switch (di) {
+		direct = -1;
+		while (direct < 4 && find == 0) {
+			direct++;
+			switch (direct) {
 			case 0:
-				i = S.top().x - 1; j = S.top().y; break;
+				i = (S.back()).x + 1; j = (S.back()).y; break;
 			case 1:
-				i = S.top().x; j = S.top().y + 1; break;
+				i = (S.back()).x; j = (S.back()).y + 1; break;
 			case 2:
-				i = S.top().x + 1; j = S.top().y; break;
+				i = (S.back()).x - 1; j = (S.back()).y; break;
 			case 3:
-				i = S.top().x; j = S.top().y - 1; break;
+				i = (S.back()).x; j = (S.back()).y - 1; break;
 			}
 			if (i < n && j < n && i >= 0 && j >= 0 && M[i][j] == 0)
 				find = 1;
@@ -66,14 +64,42 @@ bool Maze::Path(int xs, int ys, int xe, int ye) {
 			nn.x = i;
 			nn.y = j;
 			M[i][j] = -1;
-			S.push(nn);
+			S.push_back(nn);
 		}
 		else {
-			M[S.top().x][S.top().y] = -2;
-			S.pop();
+			M[S.back().x][S.back().y] = -2;
+			S.pop_back();
 		}
 	}
 	return false;
+}
+
+void Maze::Out_Path() {
+	int all = S.size();
+	for (int i = 0; i < all; i++) {
+		cout << "(" << setw(3) << S[i].x << "," << setw(3) << S[i].y << ")->";
+		if ((i + 1) % 10 == 0)
+			cout << endl;
+	}
+	cout << endl;
+}
+
+void Maze::Out_M() {
+	cout << "##################################################################\n |";
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			if (M[i][j] == 0)
+				cout << "  ";
+			else if (M[i][j] == 1)
+				cout << "■";
+			else if (M[i][j] == -1)
+				cout << "* ";
+			else
+				cout << "  ";
+		}
+		cout << "|\n |";
+	}
+	cout << "##################################################################\n\n";
 }
 
 Maze::Maze(int N) {
@@ -86,44 +112,28 @@ Maze::Maze(int N) {
 	}
 }
 
-void Maze::init() {
+Maze::~Maze() {
+	for (int i = 0; i < n; i++)
+		delete M[i];
+	delete[] M;
+}
+
+void Maze::Init(){
 	ifstream fin("in.txt");
 	int temp;
-	for (int i = 0; i < 10; i++) {
-		for (int j = 0; j < 10; j++) {
+	for(int i=0;i<n;i++)
+		for (int j = 0; j < n; j++) {
 			fin >> temp;
 			M[i][j] = temp;
 		}
-	}
-}
-
-void Maze::Out_M() {
-	cout << "#########################################\n";
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-			if (M[i][j] == 1)
-				cout << "■";
-			else if (M[i][j] == 0)
-				cout << "  ";
-			else if (M[i][j] == -1)
-				cout << "* ";
-			else
-				cout << "  ";
-		}
-		cout << "|" << endl;
-	}
-	cout << "#########################################\n";
-	cout << endl << endl;
 }
 
 void Maze::Rand_M() {
-	int temp = 1;
 	srand(time(0));
+	int temp;
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < n; j++) {
-			//Sleep(100);
-			temp = rand() % 5;
-			//cout << temp << " ";
+			temp = rand() % 3;
 			if (temp)
 				M[i][j] = 0;
 		}
